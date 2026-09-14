@@ -20,6 +20,7 @@
 */
 (function () {
   const SHEET_ID = window.TAXCODE_SHEET_ID;
+  console.log('TaxCode: loading content from sheet ID', SHEET_ID);
   if (!SHEET_ID || SHEET_ID.indexOf('PUT_YOUR') === 0) {
     console.info('TaxCode: no sheet connected yet — showing the built-in default text.');
     return;

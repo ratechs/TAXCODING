@@ -1,26 +1,32 @@
 /*
-  TaxCode content loader
-  -----------------------
-  Pulls editable text from a Google Sheet and drops it into the page.
-  No iframe, no backend — just a fetch() of the sheet's published CSV.
+  TaxCode content loader  (v2 — full-content edition)
+  -----------------------------------------------------
+  Pulls EVERY editable text field from a Google Sheet, including SEO
+  (page title, meta description/keywords). No iframe, no backend —
+  just a fetch() of the sheet's published CSV, run in the visitor's browser.
 
   SETUP (one time):
-  1. Create a Google Sheet with two tabs, named exactly:  content   and   services
-  2. Paste content-tab-template.csv into the "content" tab (row 1 = headers: key,value)
-  3. Paste services-tab-template.csv into the "services" tab (row 1 = headers below)
-  4. File > Share > "Anyone with the link" > Viewer  (must be viewable, doesn't need to be public-published)
-  5. Copy the long ID from the sheet's URL:
-       https://docs.google.com/spreadsheets/d/COPY_THIS_PART/edit
-  6. Paste it into window.TAXCODE_SHEET_ID in the small <script> tag near the top of
-     index.html and service.html.
+  1. Google Sheet with two tabs named exactly:  content   and   services
+  2. Paste content-tab-template.csv into "content"  (columns: section, key, value)
+  3. Paste services-tab-template.csv into "services"
+  4. Share > "Anyone with the link" > Viewer
+  5. Copy the ID from the sheet URL into window.TAXCODE_SHEET_ID
+     in BOTH index.html and service.html.
 
-  After that: edit the sheet, reload the page, see the change. Nothing else to touch.
-  If the sheet is unreachable (offline, ID missing, tab renamed), the page silently
-  keeps whatever text is already written in the HTML — it never breaks the page.
+  Editing rules for the client:
+  - Only ever type into column C ("value"). Never touch column B ("key").
+  - Column A ("section") is just a label to help you find rows — sort/filter
+    by it in Google Sheets (Data > Create a filter) to jump to a section.
+  - Rows with a key like "— HERO —" are section dividers only, not real
+    content — leave their value blank.
+  - In the "services" tab, add or remove whole rows to add/remove a service;
+    everything on both pages using that category updates from the same rows.
+
+  If the sheet is ever unreachable, every page quietly keeps the text
+  already written in its HTML — nothing ever breaks.
 */
 (function () {
   const SHEET_ID = window.TAXCODE_SHEET_ID;
-  console.log('TaxCode: loading content from sheet ID', SHEET_ID);
   if (!SHEET_ID || SHEET_ID.indexOf('PUT_YOUR') === 0) {
     console.info('TaxCode: no sheet connected yet — showing the built-in default text.');
     return;
@@ -29,7 +35,6 @@
   const csvUrl = (tab) =>
     `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
 
-  // Minimal CSV parser (handles quoted fields and commas inside quotes)
   function parseCSV(text) {
     const rows = [];
     let row = [], field = '', inQuotes = false;
@@ -67,20 +72,29 @@
       });
   }
 
-  // ---------- content tab: simple key -> value text swap ----------
+  // Write a value into an element, handling <meta>, <title>, and normal tags.
+  function applyValue(el, value) {
+    if (value === undefined || value === '') return;
+    if (el.tagName === 'META') { el.setAttribute('content', value); return; }
+    if (el.tagName === 'TITLE') { el.textContent = value; return; }
+    el.innerHTML = value;
+  }
+
+  let latestCats = null;
+
+  // ---------- content tab: key -> value for every text field + SEO ----------
   fetch(csvUrl('content'))
     .then(r => { if (!r.ok) throw new Error('content tab not reachable'); return r.text(); })
     .then(text => {
       const map = {};
       toObjects(parseCSV(text)).forEach(r => { if (r.key) map[r.key] = r.value; });
       document.querySelectorAll('[data-key]').forEach(el => {
-        const k = el.getAttribute('data-key');
-        if (map[k] !== undefined && map[k] !== '') el.innerHTML = map[k];
+        applyValue(el, map[el.getAttribute('data-key')]);
       });
     })
     .catch(err => console.warn('TaxCode: "content" tab not loaded, using defaults.', err));
 
-  // ---------- services tab: drives the full catalog + homepage summary ----------
+  // ---------- services tab: drives catalog + homepage summary + shared labels ----------
   fetch(csvUrl('services'))
     .then(r => { if (!r.ok) throw new Error('services tab not reachable'); return r.text(); })
     .then(text => {
@@ -98,8 +112,10 @@
         }
         if (r.item_name) cats[slug].items.push({ name: r.item_name, code: r.item_code });
       });
+      latestCats = cats;
       renderCatalog(cats);
       renderSummary(cats);
+      renderCatLabels(cats);
     })
     .catch(err => console.warn('TaxCode: "services" tab not loaded, using defaults.', err));
 
@@ -148,7 +164,7 @@
         nameEl.innerHTML = (icon ? icon.outerHTML + ' ' : '') + cat.label;
       }
       if (timeEl && cat.turnaround) timeEl.textContent = cat.turnaround;
-      if (descEl && cat.desc) descEl.childNodes[0] && (descEl.childNodes[0].textContent = cat.desc + ' ');
+      if (descEl && cat.desc && descEl.childNodes[0]) descEl.childNodes[0].textContent = cat.desc + ' ';
       if (tagsEl && cat.items.length) {
         tagsEl.innerHTML = '';
         cat.items.slice(0, 4).forEach(i => {
@@ -158,6 +174,16 @@
           tagsEl.appendChild(span);
         });
       }
+    });
+  }
+
+  // Any element tagged data-cat-label="slug" just shows that category's plain
+  // label — used by nav menus, the mobile drawer, footer links and the TOC,
+  // so editing a category name once in the services tab updates it everywhere.
+  function renderCatLabels(cats) {
+    document.querySelectorAll('[data-cat-label]').forEach(el => {
+      const cat = cats[el.getAttribute('data-cat-label')];
+      if (cat && cat.label) el.textContent = cat.label;
     });
   }
 })();

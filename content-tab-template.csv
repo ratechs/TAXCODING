@@ -1,38 +1,110 @@
-key,value
-hero_eyebrow,Trusted by 500+ businesses in Chennai and beyond
-hero_title,Tax compliance,<br>handled before<br>the deadline.
-hero_sub,"GST, income tax, registrations, bookkeeping, notice advisory and certifications — run by a team that tracks every due date so you don't have to."
-stat1_num,500+
-stat1_label,Businesses served
-stat2_num,10+
-stat2_label,Years in practice
-stat3_num,250+
-stat3_label,GST registrations filed
-stat4_num,0
-stat4_label,Missed deadlines
-sec_services_title,Everything a growing business needs to stay compliant
-sec_services_sub,"Six areas, one team. Pick where you're starting from."
-sec_process_title,How an engagement runs
-sec_process_sub,"Four steps, from first call to ongoing filing."
-process1_title,Consult
-process1_desc,Tell us your business and what's outstanding. We tell you exactly what's needed.
-process2_title,Plan
-process2_desc,"You get a written compliance calendar — every filing, every due date, upfront."
-process3_title,Execute
-process3_desc,"We prepare, file, and confirm each return before the deadline — not on it."
-process4_title,Support
-process4_desc,"Ongoing advisory, so upcoming law changes reach you before they cost you."
-sec_testimonials_title,What clients say
-sec_testimonials_sub,Feedback from businesses we file for.
-cta_title,Ready to hand off your compliance?
-cta_sub,Get a written filing calendar and a quote within one working day.
-sec_contact_title,Have a question? Ask us directly
-sec_contact_sub,We reply within one working day.
-footer_tagline,"Expert tax consulting, registrations, bookkeeping, notice advisory and license certifications — trusted by businesses across India."
-footer_address,"4, Karpaga Vinayagar St, Kandhanchavadi, Perungudi, Chennai – 600096"
-footer_phone,+91 96264 85868
-footer_email,tameenansaris@gmail.com
-phero_title,The full service catalog
-phero_sub,"Every filing, registration and certificate we handle, grouped by what stage your business is at — with the turnaround you can expect."
-cta2_title,Not sure where to start?
-cta2_sub,"Tell us what you're dealing with — we'll point to the right service and a realistic timeline."
+section,key,value
+SEO - Home,seo_home_title,TaxCode — Tax, GST & Compliance, Handled Before the Deadline
+SEO - Home,seo_home_description,"GST, income tax, registrations, bookkeeping, notice advisory and certifications for startups and businesses — filed on time, every time."
+SEO - Home,seo_home_keywords,"GST registration, income tax filing, startup registration, bookkeeping, notice advisory, Chennai tax consultant"
+SEO - Home,seo_home_og_title,TaxCode — Tax Compliance, Handled Before the Deadline
+SEO - Home,seo_home_og_description,"Trusted by 500+ businesses for GST, income tax, registrations, bookkeeping, notice advisory and certifications."
+SEO - Services page,seo_service_title,Services — TaxCode
+SEO - Services page,seo_service_description,"The full TaxCode service catalog: startup registration, GST, income tax, bookkeeping, notice advisory and certifications, with turnaround times."
+SEO - Services page,seo_service_keywords,"GST services, income tax services, bookkeeping services, notice advisory, business licenses India"
+SEO - Services page,seo_service_og_title,The Full TaxCode Service Catalog
+SEO - Services page,seo_service_og_description,"Every filing, registration and certificate we handle, with the turnaround you can expect."
+Top bar,topbar_phone,+91 96264 85868
+Top bar,topbar_email,tameenansaris@gmail.com
+Top bar,topbar_hours,"Mon–Fri, 9am–9pm"
+Navigation,nav_services_label,Services
+Navigation,nav_col1_head,Start & register
+Navigation,nav_col2_head,File & maintain
+Navigation,nav_col3_head,Resolve & certify
+Navigation,nav_process_label,How we work
+Navigation,nav_clients_label,Clients
+Navigation,nav_contact_label,Contact
+Navigation,nav_callback_label,Book a callback
+Hero,hero_eyebrow,Trusted by 500+ businesses in Chennai and beyond
+Hero,hero_title,"Tax compliance<br>handled before<br>the deadline."
+Hero,hero_sub,"GST, income tax, registrations, bookkeeping, notice advisory and certifications — run by a team that tracks every due date so you don't have to."
+Hero,hero_btn_call,Talk to an expert
+Hero,hero_btn_whatsapp,Message us
+Filing calendar widget,dc_title,Filing calendar
+Filing calendar widget,dc_month,SEP 2026
+Filing calendar widget,dc1_date,SEP 11
+Filing calendar widget,dc1_name,GSTR-1
+Filing calendar widget,dc1_sub,Monthly outward supply
+Filing calendar widget,dc1_status,Filed
+Filing calendar widget,dc2_date,SEP 20
+Filing calendar widget,dc2_name,GSTR-3B
+Filing calendar widget,dc2_sub,Monthly summary return
+Filing calendar widget,dc2_status,Due in 5 days
+Filing calendar widget,dc3_date,SEP 30
+Filing calendar widget,dc3_name,TDS Payment
+Filing calendar widget,dc3_sub,Section 194 series
+Filing calendar widget,dc3_status,Upcoming
+Filing calendar widget,dc4_date,OCT 15
+Filing calendar widget,dc4_name,TDS Return
+Filing calendar widget,dc4_sub,Form 26Q
+Filing calendar widget,dc4_status,Upcoming
+Filing calendar widget,dc_foot,"Every client gets a calendar like this — we file it, you get notified."
+Stats bar,stat1_num,500+
+Stats bar,stat1_label,Businesses served
+Stats bar,stat2_num,10+
+Stats bar,stat2_label,Years in practice
+Stats bar,stat3_num,250+
+Stats bar,stat3_label,GST registrations filed
+Stats bar,stat4_num,0
+Stats bar,stat4_label,Missed deadlines
+Services summary,sec_services_title,Everything a growing business needs to stay compliant
+Services summary,sec_services_sub,"Six areas, one team. Pick where you're starting from."
+Services summary,svc_link_label,View details →
+Process steps,sec_process_title,How an engagement runs
+Process steps,sec_process_sub,"Four steps, from first call to ongoing filing."
+Process steps,process1_title,Consult
+Process steps,process1_desc,Tell us your business and what's outstanding. We tell you exactly what's needed.
+Process steps,process2_title,Plan
+Process steps,process2_desc,"You get a written compliance calendar — every filing, every due date, upfront."
+Process steps,process3_title,Execute
+Process steps,process3_desc,"We prepare, file, and confirm each return before the deadline — not on it."
+Process steps,process4_title,Support
+Process steps,process4_desc,"Ongoing advisory, so upcoming law changes reach you before they cost you."
+Testimonials,sec_testimonials_title,What clients say
+Testimonials,sec_testimonials_sub,Feedback from businesses we file for.
+CTA - Home,cta_title,Ready to hand off your compliance?
+CTA - Home,cta_sub,Get a written filing calendar and a quote within one working day.
+CTA - Home,cta_btn_call,Call now
+CTA - Home,cta_btn_whatsapp,WhatsApp us
+Contact form,sec_contact_title,Have a question? Ask us directly
+Contact form,sec_contact_sub,We reply within one working day.
+Contact form,field_name_label,Your name
+Contact form,field_email_label,Your email
+Contact form,field_phone_label,Phone number
+Contact form,field_service_label,Service
+Contact form,field_subject_label,Subject
+Contact form,field_message_label,Message
+Contact form,btn_send_label,Send message
+Contact form,toast_message,Thanks — your message has been sent. We'll be in touch shortly.
+Footer,footer_tagline_home,"Expert tax consulting, registrations, bookkeeping, notice advisory and license certifications — trusted by businesses across India."
+Footer,footer_tagline_service,"Expert tax consulting, business registration and compliance services trusted by individuals and businesses."
+Footer,footer_address,"4, Karpaga Vinayagar St, Kandhanchavadi, Perungudi, Chennai – 600096"
+Footer,footer_phone,+91 96264 85868
+Footer,footer_email,tameenansaris@gmail.com
+Footer,footer_whatsapp_label,Chat on WhatsApp
+Footer,footer_col1_head,Services
+Footer,footer_col2_head,More
+Footer,footer_col3_head,Address
+Footer,footer_copyright,© 2026 TaxCode. All rights reserved.
+Footer,footer_location,"Chennai, India"
+Services page hero,phero_title,The full service catalog
+Services page hero,phero_sub,"Every filing, registration and certificate we handle, grouped by what stage your business is at — with the turnaround you can expect."
+Services page hero,breadcrumb_home,Home
+Services page hero,breadcrumb_current,Services
+Category buttons,cta_startups_btn1,Get a quote
+Category buttons,cta_startups_btn2,Ask which structure fits
+Category buttons,cta_registrations_btn1,Register now
+Category buttons,cta_gst_btn1,GST support
+Category buttons,cta_income-tax_btn1,File ITR now
+Category buttons,cta_bookkeeping_btn1,Outsource accounting
+Category buttons,cta_notice-advisory_btn1,Get urgent support
+Category buttons,cta_licenses_btn1,Get certificate
+CTA - Services page,cta2_title,Not sure where to start?
+CTA - Services page,cta2_sub,"Tell us what you're dealing with — we'll point to the right service and a realistic timeline."
+CTA - Services page,cta2_btn_call,Call now
+CTA - Services page,cta2_btn_whatsapp,WhatsApp

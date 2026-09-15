@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Services — TaxCode</title>
+<title data-key="seo_service_title">Services — TaxCode</title>
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
-<meta name="description" content="The full TaxCode service catalog: startup registration, GST, income tax, bookkeeping, notice advisory and certifications, with turnaround times.">
+<meta name="description" data-key="seo_service_description" content="The full TaxCode service catalog: startup registration, GST, income tax, bookkeeping, notice advisory and certifications, with turnaround times.">
+<meta name="keywords" data-key="seo_service_keywords" content="GST services, income tax services, bookkeeping services, notice advisory">
+<meta property="og:title" data-key="seo_service_og_title" content="The Full TaxCode Service Catalog">
+<meta property="og:description" data-key="seo_service_og_description" content="Every filing, registration and certificate we handle, with the turnaround you can expect.">
 <link href="img/favicon.ico" rel="icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,15 +16,15 @@
 <link href="style.css" rel="stylesheet">
 
 <!-- ===== EDIT ONLY THIS LINE to connect your Google Sheet (same ID as index.html) ===== -->
-<script>window.TAXCODE_SHEET_ID = "1v_39kOxA1zfkWG1q6JuQgyPAKmcOskrYGL0x0itf8HI";</script>
+<script>window.TAXCODE_SHEET_ID = "PUT_YOUR_SHEET_ID_HERE";</script>
 </head>
 <body>
 
 <div class="topbar">
   <div class="wrap">
-    <span><i class="bi bi-telephone"></i> <a href="tel:+919626485868">+91 96264 85868</a></span>
-    <span><i class="bi bi-envelope"></i> <a href="mailto:tameenansaris@gmail.com">tameenansaris@gmail.com</a></span>
-    <span><i class="bi bi-clock"></i> Mon–Fri, 9am–9pm</span>
+    <span><i class="bi bi-telephone"></i> <a href="tel:+919626485868" data-key="topbar_phone">+91 96264 85868</a></span>
+    <span><i class="bi bi-envelope"></i> <a href="mailto:tameenansaris@gmail.com" data-key="topbar_email">tameenansaris@gmail.com</a></span>
+    <span><i class="bi bi-clock"></i> <span data-key="topbar_hours">Mon–Fri, 9am–9pm</span></span>
   </div>
 </div>
 
@@ -29,13 +32,13 @@
   <div class="nav-row">
     <a href="index.html" class="brand">Tax<span class="dot">Code</span></a>
     <nav class="nav-links">
-      <a href="index.html#service">Services</a>
-      <a href="index.html#process">How we work</a>
-      <a href="index.html#testimonials">Clients</a>
-      <a href="index.html#contact">Contact</a>
+      <a href="index.html#service"><span data-key="nav_services_label">Services</span></a>
+      <a href="index.html#process"><span data-key="nav_process_label">How we work</span></a>
+      <a href="index.html#testimonials"><span data-key="nav_clients_label">Clients</span></a>
+      <a href="index.html#contact"><span data-key="nav_contact_label">Contact</span></a>
     </nav>
     <div class="nav-right">
-      <a href="tel:+919626485868" class="cta-pill">Book a callback</a>
+      <a href="tel:+919626485868" class="cta-pill"><span data-key="nav_callback_label">Book a callback</span></a>
       <button class="burger" onclick="document.getElementById('drawer').classList.add('open')" aria-label="Open menu"><i class="bi bi-list"></i></button>
     </div>
   </div>
@@ -46,19 +49,19 @@
     <span class="brand">Tax<span class="dot">Code</span></span>
     <button class="close" onclick="document.getElementById('drawer').classList.remove('open')" aria-label="Close menu">&times;</button>
   </div>
-  <a class="dlink" href="#startups">Startup registration</a>
-  <a class="dlink" href="#registrations">Registrations</a>
-  <a class="dlink" href="#gst">GST services</a>
-  <a class="dlink" href="#income-tax">Income tax</a>
-  <a class="dlink" href="#bookkeeping">Bookkeeping</a>
-  <a class="dlink" href="#notice-advisory">Notice advisory</a>
-  <a class="dlink" href="#licenses">Licenses & certificates</a>
-  <a href="tel:+919626485868" class="cta-pill" style="display:inline-block;margin-top:20px;">Book a callback</a>
+  <a class="dlink" href="#startups" data-cat-label="startups">Startup registration</a>
+  <a class="dlink" href="#registrations" data-cat-label="registrations">Registrations</a>
+  <a class="dlink" href="#gst" data-cat-label="gst">GST services</a>
+  <a class="dlink" href="#income-tax" data-cat-label="income-tax">Income tax</a>
+  <a class="dlink" href="#bookkeeping" data-cat-label="bookkeeping">Bookkeeping</a>
+  <a class="dlink" href="#notice-advisory" data-cat-label="notice-advisory">Notice advisory</a>
+  <a class="dlink" href="#licenses" data-cat-label="licenses">Licenses & certificates</a>
+  <a href="tel:+919626485868" class="cta-pill" style="display:inline-block;margin-top:20px;"><span data-key="nav_callback_label">Book a callback</span></a>
 </div>
 
 <div class="phero">
   <div class="wrap">
-    <div class="breadcrumb"><a href="index.html">Home</a> / Services</div>
+    <div class="breadcrumb"><a href="index.html" data-key="breadcrumb_home">Home</a> / <span data-key="breadcrumb_current">Services</span></div>
     <h1 class="phero-h" data-key="phero_title">The full service catalog</h1>
     <p data-key="phero_sub">Every filing, registration and certificate we handle, grouped by what stage your business is at — with the turnaround you can expect.</p>
   </div>
@@ -66,13 +69,13 @@
 
 <div class="wrap docs">
   <nav class="toc">
-    <a href="#startups">Startups <span class="count mono">06</span></a>
-    <a href="#registrations">Registrations <span class="count mono">08</span></a>
-    <a href="#gst">GST <span class="count mono">10</span></a>
-    <a href="#income-tax">Income tax <span class="count mono">07</span></a>
-    <a href="#bookkeeping">Bookkeeping <span class="count mono">12</span></a>
-    <a href="#notice-advisory">Notice advisory <span class="count mono">14</span></a>
-    <a href="#licenses">Licenses <span class="count mono">05</span></a>
+    <a href="#startups"><span data-cat-label="startups">Startups</span> <span class="count mono">06</span></a>
+    <a href="#registrations"><span data-cat-label="registrations">Registrations</span> <span class="count mono">08</span></a>
+    <a href="#gst"><span data-cat-label="gst">GST</span> <span class="count mono">10</span></a>
+    <a href="#income-tax"><span data-cat-label="income-tax">Income tax</span> <span class="count mono">07</span></a>
+    <a href="#bookkeeping"><span data-cat-label="bookkeeping">Bookkeeping</span> <span class="count mono">12</span></a>
+    <a href="#notice-advisory"><span data-cat-label="notice-advisory">Notice advisory</span> <span class="count mono">14</span></a>
+    <a href="#licenses"><span data-cat-label="licenses">Licenses</span> <span class="count mono">05</span></a>
   </nav>
 
   <main>
@@ -86,8 +89,8 @@
       <div class="item-row"><span class="iname">Private Limited Company</span><span class="icode">REG-05</span></div>
       <div class="item-row"><span class="iname">Section 8 Company (NGO)</span><span class="icode">REG-06</span></div>
       <div class="cat-cta">
-        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> Get a quote</a>
-        <a href="tel:+919626485868" class="btn-secondary"><i class="bi bi-telephone"></i> Ask which structure fits</a>
+        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> <span data-key="cta_startups_btn1">Get a quote</span></a>
+        <a href="tel:+919626485868" class="btn-secondary"><i class="bi bi-telephone"></i> <span data-key="cta_startups_btn2">Ask which structure fits</span></a>
       </div>
     </div>
 
@@ -103,7 +106,7 @@
       <div class="item-row"><span class="iname">Professional tax registration</span><span class="icode">LIC-07</span></div>
       <div class="item-row"><span class="iname">Digital Signature Certificate (DSC)</span><span class="icode">LIC-08</span></div>
       <div class="cat-cta">
-        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> Register now</a>
+        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> <span data-key="cta_registrations_btn1">Register now</span></a>
       </div>
     </div>
 
@@ -121,7 +124,7 @@
       <div class="item-row"><span class="iname">GST cancellation / surrender</span><span class="icode">GST-09</span></div>
       <div class="item-row"><span class="iname">GSTR-10 filing</span><span class="icode">GST-10</span></div>
       <div class="cat-cta">
-        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> GST support</a>
+        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> <span data-key="cta_gst_btn1">GST support</span></a>
       </div>
     </div>
 
@@ -136,7 +139,7 @@
       <div class="item-row"><span class="iname">TDS return filing</span><span class="icode">ITR-06</span></div>
       <div class="item-row"><span class="iname">Tax planning & advisory</span><span class="icode">ITR-07</span></div>
       <div class="cat-cta">
-        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> File ITR now</a>
+        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> <span data-key="cta_income-tax_btn1">File ITR now</span></a>
       </div>
     </div>
 
@@ -156,7 +159,7 @@
       <div class="item-row"><span class="iname">Virtual bookkeeping services</span><span class="icode">BK-11</span></div>
       <div class="item-row"><span class="iname">Statutory compliance reporting</span><span class="icode">BK-12</span></div>
       <div class="cat-cta">
-        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> Outsource accounting</a>
+        <a href="https://wa.me/919626485868" class="btn-primary"><i class="bi bi-whatsapp"></i> <span data-key="cta_bookkeeping_btn1">Outsource accounting</span></a>
       </div>
     </div>
 
@@ -178,7 +181,7 @@
       <div class="item-row"><span class="iname">GST refund rejection support</span><span class="icode">NTC-13</span></div>
       <div class="item-row"><span class="iname">Tax & GST notice management</span><span class="icode">NTC-14</span></div>
       <div class="cat-cta">
-        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-shield-exclamation"></i> Get urgent support</a>
+        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-shield-exclamation"></i> <span data-key="cta_notice-advisory_btn1">Get urgent support</span></a>
       </div>
     </div>
 
@@ -191,7 +194,7 @@
       <div class="item-row"><span class="iname">Net worth certificate for visa</span><span class="icode">CRT-04</span></div>
       <div class="item-row"><span class="iname">Net worth certificate for loan</span><span class="icode">CRT-05</span></div>
       <div class="cat-cta">
-        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> Get certificate</a>
+        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> <span data-key="cta_licenses_btn1">Get certificate</span></a>
       </div>
     </div>
   </main>
@@ -203,8 +206,8 @@
       <h2 data-key="cta2_title">Not sure where to start?</h2>
       <p data-key="cta2_sub">Tell us what you're dealing with — we'll point to the right service and a realistic timeline.</p>
       <div class="cat-cta">
-        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> Call now</a>
-        <a href="https://wa.me/919626485868" class="btn-secondary"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+        <a href="tel:+919626485868" class="btn-primary"><i class="bi bi-telephone"></i> <span data-key="cta2_btn_call">Call now</span></a>
+        <a href="https://wa.me/919626485868" class="btn-secondary"><i class="bi bi-whatsapp"></i> <span data-key="cta2_btn_whatsapp">WhatsApp</span></a>
       </div>
     </div>
   </div>
@@ -215,33 +218,33 @@
     <div class="foot-grid">
       <div>
         <span class="brand" style="color:#fff;">Tax<span class="dot">Code</span></span>
-        <p style="margin-top:14px;" data-key="footer_tagline">Expert tax consulting, business registration and compliance services trusted by individuals and businesses.</p>
-        <a href="https://wa.me/919626485868" class="foot-wa" target="_blank"><i class="bi bi-whatsapp"></i> Chat on WhatsApp</a>
+        <p style="margin-top:14px;" data-key="footer_tagline_service">Expert tax consulting, business registration and compliance services trusted by individuals and businesses.</p>
+        <a href="https://wa.me/919626485868" class="foot-wa" target="_blank"><i class="bi bi-whatsapp"></i> <span data-key="footer_whatsapp_label">Chat on WhatsApp</span></a>
       </div>
       <div>
-        <h6>Services</h6>
-        <a href="#startups">Startup registration</a>
-        <a href="#gst">GST services</a>
-        <a href="#income-tax">Income tax</a>
-        <a href="#bookkeeping">Bookkeeping</a>
+        <h6 data-key="footer_col1_head">Services</h6>
+        <a href="#startups" data-cat-label="startups">Startup registration</a>
+        <a href="#gst" data-cat-label="gst">GST services</a>
+        <a href="#income-tax" data-cat-label="income-tax">Income tax</a>
+        <a href="#bookkeeping" data-cat-label="bookkeeping">Bookkeeping</a>
       </div>
       <div>
-        <h6>More</h6>
-        <a href="#notice-advisory">Notice advisory</a>
-        <a href="#licenses">Licenses & certificates</a>
-        <a href="index.html#process">How we work</a>
-        <a href="index.html#contact">Contact</a>
+        <h6 data-key="footer_col2_head">More</h6>
+        <a href="#notice-advisory" data-cat-label="notice-advisory">Notice advisory</a>
+        <a href="#licenses" data-cat-label="licenses">Licenses & certificates</a>
+        <a href="index.html#process"><span data-key="nav_process_label">How we work</span></a>
+        <a href="index.html#contact"><span data-key="nav_contact_label">Contact</span></a>
       </div>
       <div>
-        <h6>Address</h6>
+        <h6 data-key="footer_col3_head">Address</h6>
         <p data-key="footer_address">4, Karpaga Vinayagar St, Kandhanchavadi, Perungudi, Chennai – 600096</p>
         <p><a href="tel:+919626485868" data-key="footer_phone">+91 96264 85868</a></p>
         <p><a href="mailto:starfilings@gmail.com" data-key="footer_email">starfilings@gmail.com</a></p>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 TaxCode. All rights reserved.</span>
-      <span>Chennai, India</span>
+      <span data-key="footer_copyright">© 2026 TaxCode. All rights reserved.</span>
+      <span data-key="footer_location">Chennai, India</span>
     </div>
   </div>
 </footer>

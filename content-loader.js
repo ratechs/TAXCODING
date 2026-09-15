@@ -1,818 +1,808 @@
-/*
-  ============================================================
-  TAXCODE GOOGLE SHEETS CONTENT LOADER
-  ============================================================
-
-  PURPOSE:
-  Google Sheets = single source of truth for website content.
-
-  REQUIRED SHEETS:
-    1. content
-    2. services
-
-  CONTENT SHEET:
-    section | key | value
-
-  SERVICES SHEET:
-    category_slug | category_label | category_desc | turnaround | item_name | item_code
-
-  SETUP:
-    window.TAXCODE_SHEET_ID = "YOUR_GOOGLE_SHEET_ID";
-
-  The same JS can be used in:
-    index.html
-    service.html
-
-  IMPORTANT:
-    The Google Sheet must be published/readable by the browser.
-
-  ============================================================
-*/
-
 (function () {
   "use strict";
 
-  /* ==========================================================
-     CONFIGURATION
-     ========================================================== */
+  /*
+   * ==========================================================
+   * TAXCODE - GOOGLE SHEETS CONTENT MANAGEMENT SYSTEM
+   * Static HTML + CSS + JavaScript
+   * No backend / no framework
+   * ==========================================================
+   */
 
   const SHEET_ID = window.TAXCODE_SHEET_ID;
 
-  // Automatically refresh sheet content.
-  // 0 = disabled.
-  // Example: 5 * 60 * 1000 = 5 minutes.
-  const AUTO_REFRESH_INTERVAL = 0;
-
-  // Set true only if you intentionally store HTML in the Sheet.
-  const ALLOW_HTML_CONTENT = true;
-
-  /*
-    Keys that are allowed to contain HTML.
-
-    Example Sheet value:
-
-    <strong>Professional</strong> tax services
-
-    If a key is not listed here, textContent is used.
-  */
-  const HTML_KEYS = new Set([
-    "hero_title",
-    "hero_description",
-    "about_description",
-    "footer_description",
-    "cta_title",
-    "cta_description"
-  ]);
-
-  /* ==========================================================
-     VALIDATE SHEET ID
-     ========================================================== */
-
-  if (
-    !SHEET_ID ||
-    SHEET_ID.trim() === "" ||
-    SHEET_ID.indexOf("PUT_YOUR") === 0
-  ) {
-    console.info(
-      "TaxCode: No Google Sheet connected. Using built-in HTML content."
-    );
+  if (!SHEET_ID) {
+    console.error("TaxCode: Google Sheet ID is missing.");
     return;
   }
 
-  /* ==========================================================
-     GOOGLE SHEET CSV URL
-     ========================================================== */
+  const SHEETS = {
+    content: "content",
+    services: "services",
+    deadlines: "deadlines",
+    process: "process",
+    settings: "settings"
+  };
 
-  function csvUrl(tabName) {
+  let CONTENT = {};
+  let SERVICES = [];
+  let DEADLINES = [];
+  let PROCESS = [];
+  let SETTINGS = {};
+
+  /*
+   * ----------------------------------------------------------
+   * Google Sheet CSV URL
+   * ----------------------------------------------------------
+   */
+
+  function csvUrl(sheetName) {
     return (
       "https://docs.google.com/spreadsheets/d/" +
       encodeURIComponent(SHEET_ID) +
       "/gviz/tq?tqx=out:csv&sheet=" +
-      encodeURIComponent(tabName)
+      encodeURIComponent(sheetName)
     );
   }
 
-  /* ==========================================================
-     FETCH SHEET
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Fetch sheet
+   * ----------------------------------------------------------
+   */
 
-  async function fetchSheet(tabName) {
-    const response = await fetch(csvUrl(tabName), {
-      method: "GET",
+  async function fetchSheet(sheetName) {
+    const response = await fetch(csvUrl(sheetName), {
       cache: "no-store"
     });
 
     if (!response.ok) {
       throw new Error(
-        `Google Sheet "${tabName}" returned HTTP ${response.status}`
+        `Google Sheet "${sheetName}" returned ${response.status}`
       );
     }
 
     return await response.text();
   }
 
-  /* ==========================================================
-     CSV PARSER
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * CSV parser
+   * Handles quoted values, commas and new lines
+   * ----------------------------------------------------------
+   */
 
-  function parseCSV(text) {
+  function parseCSV(csv) {
     const rows = [];
-
     let row = [];
-    let field = "";
+    let value = "";
     let insideQuotes = false;
 
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
+    for (let i = 0; i < csv.length; i++) {
+      const char = csv[i];
+      const next = csv[i + 1];
 
-      /* Inside quoted field */
-      if (insideQuotes) {
-        if (char === '"') {
-          /*
-            Two quotes inside quoted CSV field = one quote
-          */
-          if (text[i + 1] === '"') {
-            field += '"';
-            i++;
-          } else {
-            insideQuotes = false;
-          }
-        } else {
-          field += char;
-        }
-
+      if (char === '"' && insideQuotes && next === '"') {
+        value += '"';
+        i++;
         continue;
       }
 
-      /* Start quoted field */
       if (char === '"') {
-        insideQuotes = true;
+        insideQuotes = !insideQuotes;
         continue;
       }
 
-      /* Column separator */
-      if (char === ",") {
-        row.push(field);
-        field = "";
+      if (char === "," && !insideQuotes) {
+        row.push(value);
+        value = "";
         continue;
       }
 
-      /* New line */
-      if (char === "\n" || char === "\r") {
-        if (char === "\r" && text[i + 1] === "\n") {
-          i++;
-        }
-
-        row.push(field);
-        field = "";
-
-        /*
-          Ignore completely empty rows
-        */
-        if (row.some(value => String(value).trim() !== "")) {
-          rows.push(row);
-        }
+      if (char === "\n" && !insideQuotes) {
+        row.push(value);
+        rows.push(row);
 
         row = [];
+        value = "";
+
         continue;
       }
 
-      field += char;
+      if (char !== "\r") {
+        value += char;
+      }
     }
 
-    /*
-      Add final field/row
-    */
-    if (field.length > 0 || row.length > 0) {
-      row.push(field);
-
-      if (row.some(value => String(value).trim() !== "")) {
-        rows.push(row);
-      }
+    if (value.length || row.length) {
+      row.push(value);
+      rows.push(row);
     }
 
     return rows;
   }
 
-  /* ==========================================================
-     CSV -> OBJECTS
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * CSV -> objects
+   * ----------------------------------------------------------
+   */
 
-  function toObjects(rows) {
+  function toObjects(csv) {
+    const rows = parseCSV(csv);
+
     if (!rows.length) {
       return [];
     }
 
     const headers = rows[0].map(header =>
-      String(header || "").trim()
+      String(header).trim()
     );
 
     return rows
       .slice(1)
       .filter(row =>
-        row.some(cell =>
-          String(cell || "").trim() !== ""
-        )
+        row.some(cell => String(cell).trim() !== "")
       )
       .map(row => {
-        const object = {};
+        const obj = {};
 
         headers.forEach((header, index) => {
-          if (!header) return;
-
-          object[header] = String(
-            row[index] || ""
-          ).trim();
+          obj[header] = String(row[index] ?? "").trim();
         });
 
-        return object;
+        return obj;
       });
   }
 
-  /* ==========================================================
-     CONTENT MAP
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Helpers
+   * ----------------------------------------------------------
+   */
 
-  function buildContentMap(rows) {
-    const map = {};
-
-    rows.forEach(row => {
-      const key = String(row.key || "").trim();
-
-      if (!key) {
-        return;
-      }
-
-      /*
-        Ignore visual section divider rows.
-        Example:
-          — HERO —
-          — SERVICES —
-      */
-      if (
-        key.startsWith("—") &&
-        key.endsWith("—")
-      ) {
-        return;
-      }
-
-      map[key] = row.value || "";
-    });
-
-    return map;
-  }
-
-  /* ==========================================================
-     APPLY CONTENT VALUE
-     ========================================================== */
-
-  function applyValue(element, value) {
-    if (!element) {
-      return;
-    }
-
-    /*
-      If value is undefined, don't change existing HTML.
-      This gives you the fallback behavior.
-    */
+  function isVisible(value) {
     if (value === undefined || value === null) {
-      return;
+      return true;
     }
 
-    const cleanValue = String(value);
+    const v = String(value).trim().toLowerCase();
 
-    /*
-      Empty Sheet value:
-      Keep existing HTML.
-    */
-    if (cleanValue.trim() === "") {
-      return;
-    }
-
-    const tagName = element.tagName;
-
-    /* --------------------------------------------------------
-       META TAG
-       -------------------------------------------------------- */
-
-    if (tagName === "META") {
-      element.setAttribute("content", cleanValue);
-      return;
-    }
-
-    /* --------------------------------------------------------
-       TITLE TAG
-       -------------------------------------------------------- */
-
-    if (tagName === "TITLE") {
-      element.textContent = cleanValue;
-      return;
-    }
-
-    /* --------------------------------------------------------
-       NORMAL ELEMENT
-       -------------------------------------------------------- */
-
-    const key = element.getAttribute("data-key");
-
-    if (
-      ALLOW_HTML_CONTENT &&
-      HTML_KEYS.has(key)
-    ) {
-      element.innerHTML = cleanValue;
-    } else {
-      element.textContent = cleanValue;
-    }
+    return ![
+      "false",
+      "0",
+      "no",
+      "hidden",
+      "off"
+    ].includes(v);
   }
 
-  /* ==========================================================
-     APPLY ALL CONTENT
-     ========================================================== */
-
-  function applyContent(contentMap) {
-    const elements = document.querySelectorAll(
-      "[data-key]"
-    );
-
-    elements.forEach(element => {
-      const key = element.getAttribute("data-key");
-
-      if (!key) {
-        return;
-      }
-
-      applyValue(
-        element,
-        contentMap[key]
-      );
-    });
-
-    console.log(
-      `TaxCode: Applied ${elements.length} content elements.`
-    );
+  function escapeHTML(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
-  /* ==========================================================
-     LOAD CONTENT TAB
-     ========================================================== */
+  /*
+   * Content fields such as hero_title may contain <br>.
+   * Only allow the small set of formatting tags we intentionally
+   * support.
+   */
+
+  function safeHTML(value) {
+    return String(value ?? "")
+      .replace(/<br\s*\/?>/gi, "<br>")
+      .replace(/<strong>/gi, "<strong>")
+      .replace(/<\/strong>/gi, "</strong>")
+      .replace(/<em>/gi, "<em>")
+      .replace(/<\/em>/gi, "</em>")
+      .replace(/<(?!br\s*\/?|\/?(strong|em)\b)[^>]*>/gi, "");
+  }
+
+  function splitPipe(value) {
+    return String(value || "")
+      .split("|")
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+
+  function slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Load basic content
+   * ----------------------------------------------------------
+   */
 
   async function loadContent() {
-    try {
-      const csvText = await fetchSheet("content");
+    const csv = await fetchSheet(SHEETS.content);
+    const rows = toObjects(csv);
 
-      const rows = parseCSV(csvText);
-      const objects = toObjects(rows);
-      const contentMap = buildContentMap(objects);
-
-      applyContent(contentMap);
-
-      console.log(
-        "TaxCode: Content sheet loaded successfully."
-      );
-
-      return contentMap;
-
-    } catch (error) {
-      console.warn(
-        "TaxCode: Content sheet unavailable. Keeping existing HTML.",
-        error
-      );
-
-      return null;
-    }
-  }
-
-  /* ==========================================================
-     BUILD SERVICES DATA
-     ========================================================== */
-
-  function buildCategories(rows) {
-    const categories = {};
+    CONTENT = {};
 
     rows.forEach(row => {
-      const slug = String(
-        row.category_slug || ""
-      ).trim();
-
-      if (!slug) {
-        return;
-      }
-
-      /*
-        Create category
-      */
-      if (!categories[slug]) {
-        categories[slug] = {
-          slug: slug,
-          label: row.category_label || "",
-          desc: row.category_desc || "",
-          turnaround: row.turnaround || "",
-          items: []
-        };
-      }
-
-      /*
-        Add service item
-      */
-      const itemName = String(
-        row.item_name || ""
-      ).trim();
-
-      const itemCode = String(
-        row.item_code || ""
-      ).trim();
-
-      if (itemName) {
-        categories[slug].items.push({
-          name: itemName,
-          code: itemCode
-        });
+      if (row.key) {
+        CONTENT[row.key] = row.value || "";
       }
     });
 
-    return categories;
+    applyContent();
+
+    console.log("TaxCode: content loaded.");
   }
 
-  /* ==========================================================
-     LOAD SERVICES TAB
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Apply [data-key]
+   * ----------------------------------------------------------
+   */
 
-  async function loadServices() {
-    try {
-      const csvText = await fetchSheet("services");
+  function applyContent() {
+    document.querySelectorAll("[data-key]").forEach(element => {
+      const key = element.dataset.key;
 
-      const rows = parseCSV(csvText);
-      const objects = toObjects(rows);
+      if (!(key in CONTENT)) {
+        return;
+      }
 
-      const categories = buildCategories(objects);
+      const value = CONTENT[key];
 
-      /*
-        Render everything
-      */
-      renderCatalog(categories);
-      renderSummary(categories);
-      renderCategoryLabels(categories);
+      if (
+        element.tagName === "TITLE"
+      ) {
+        element.textContent = value;
+        return;
+      }
 
-      console.log(
-        `TaxCode: Loaded ${Object.keys(categories).length} service categories.`
-      );
+      if (
+        element.tagName === "META"
+      ) {
+        element.setAttribute("content", value);
+        return;
+      }
 
-      return categories;
+      element.innerHTML = safeHTML(value);
+    });
+  }
 
-    } catch (error) {
-      console.warn(
-        "TaxCode: Services sheet unavailable. Keeping existing HTML.",
-        error
-      );
+  /*
+   * ----------------------------------------------------------
+   * Settings
+   * ----------------------------------------------------------
+   */
 
-      return null;
+  async function loadSettings() {
+    const csv = await fetchSheet(SHEETS.settings);
+    const rows = toObjects(csv);
+
+    SETTINGS = {};
+
+    rows.forEach(row => {
+      if (row.key) {
+        SETTINGS[row.key] = row.value || "";
+      }
+    });
+
+    applySettings();
+
+    console.log("TaxCode: settings loaded.");
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Contact links / global settings
+   * ----------------------------------------------------------
+   */
+
+  function applySettings() {
+    const phone =
+      SETTINGS.phone || "";
+
+    const phoneDisplay =
+      SETTINGS.phone_display ||
+      phone;
+
+    const email =
+      SETTINGS.email || "";
+
+    const whatsapp =
+      SETTINGS.whatsapp ||
+      phone.replace(/\D/g, "");
+
+    /*
+     * Phone links
+     */
+
+    document
+      .querySelectorAll('a[href^="tel:"]')
+      .forEach(link => {
+        link.href = "tel:" + phone;
+      });
+
+    /*
+     * Email links
+     */
+
+    document
+      .querySelectorAll('a[href^="mailto:"]')
+      .forEach(link => {
+        link.href = "mailto:" + email;
+      });
+
+    /*
+     * WhatsApp links
+     */
+
+    document
+      .querySelectorAll('a[href*="wa.me/"]')
+      .forEach(link => {
+        link.href =
+          "https://wa.me/" +
+          whatsapp;
+      });
+
+    /*
+     * Phone text
+     */
+
+    document
+      .querySelectorAll('[data-setting="phone"]')
+      .forEach(el => {
+        el.textContent = phoneDisplay;
+      });
+
+    /*
+     * Email text
+     */
+
+    document
+      .querySelectorAll('[data-setting="email"]')
+      .forEach(el => {
+        el.textContent = email;
+      });
+
+    /*
+     * Address
+     */
+
+    document
+      .querySelectorAll('[data-setting="address"]')
+      .forEach(el => {
+        el.textContent =
+          SETTINGS.address || "";
+      });
+
+    /*
+     * Location
+     */
+
+    document
+      .querySelectorAll('[data-setting="location"]')
+      .forEach(el => {
+        el.textContent =
+          SETTINGS.location || "";
+      });
+
+    /*
+     * Google Map
+     */
+
+    const map = document.querySelector(
+      "[data-map]"
+    );
+
+    if (map && SETTINGS.map_url) {
+      map.src = SETTINGS.map_url;
+    }
+
+    /*
+     * Contact form
+     */
+
+    const form =
+      document.getElementById("contactForm");
+
+    if (
+      form &&
+      SETTINGS.form_url
+    ) {
+      form.action =
+        SETTINGS.form_url;
     }
   }
 
-  /* ==========================================================
-     RENDER SERVICE CATALOG
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Services
+   * ----------------------------------------------------------
+   */
 
-  function renderCatalog(categories) {
-    Object.keys(categories).forEach(slug => {
+  async function loadServices() {
+    const csv =
+      await fetchSheet(
+        SHEETS.services
+      );
 
-      /*
-        Use getElementById instead of CSS selector.
-        Safer for slugs.
-      */
-      const block = document.getElementById(slug);
+    const rows = toObjects(csv);
 
-      if (!block) {
-        return;
-      }
+    SERVICES = rows
+      .filter(row => isVisible(row.visible))
+      .map(row => ({
+        slug:
+          row.slug ||
+          slugify(row.name),
 
-      const category = categories[slug];
+        name:
+          row.name || "",
 
-      /* ------------------------------------------------------
-         CATEGORY TITLE
-         ------------------------------------------------------ */
+        icon:
+          row.icon ||
+          "bi-check-circle",
 
-      const titleElement =
-        block.querySelector(
-          ".cat-head h2"
-        );
+        description:
+          row.description || "",
 
-      if (
-        titleElement &&
-        category.label
-      ) {
-        const icon =
-          titleElement.querySelector("i");
+        turnaround:
+          row.turnaround || "",
 
-        /*
-          Clear existing title
-        */
-        titleElement.textContent = "";
+        codePrefix:
+          row.code_prefix || "",
 
-        /*
-          Keep icon
-        */
-        if (icon) {
-          titleElement.appendChild(icon);
-          titleElement.appendChild(
-            document.createTextNode(" ")
-          );
-        }
+        ctaText:
+          row.cta_text || "Get started",
 
-        titleElement.appendChild(
-          document.createTextNode(
-            category.label
-          )
-        );
-      }
+        ctaType:
+          row.cta_type || "whatsapp",
 
-      /* ------------------------------------------------------
-         TURNAROUND
-         ------------------------------------------------------ */
+        items:
+          splitPipe(row.items),
 
-      const turnaroundElement =
-        block.querySelector(
-          ".cat-head .turnaround"
-        );
+        tags:
+          splitPipe(row.tags)
+      }));
 
-      if (
-        turnaroundElement &&
-        category.turnaround
-      ) {
-        turnaroundElement.textContent =
-          category.turnaround;
-      }
+    console.log(
+      "TaxCode: services loaded.",
+      SERVICES
+    );
 
-      /* ------------------------------------------------------
-         DESCRIPTION
-         ------------------------------------------------------ */
+    renderHomepageServices();
+    renderServicePage();
+    renderServiceNavigation();
+    renderServiceSelect();
+    renderNavigationServices();
+  }
 
-      const descriptionElement =
-        block.querySelector(
-          ".cat-desc"
-        );
+  /*
+   * ----------------------------------------------------------
+   * CTA URL
+   * ----------------------------------------------------------
+   */
 
-      if (
-        descriptionElement &&
-        category.desc
-      ) {
-        descriptionElement.textContent =
-          category.desc;
-      }
+  function serviceCTA(service) {
+    const phone =
+      SETTINGS.phone || "";
 
-      /* ------------------------------------------------------
-         REMOVE OLD ITEMS FIRST
-         ------------------------------------------------------ */
+    const whatsapp =
+      SETTINGS.whatsapp ||
+      phone.replace(/\D/g, "");
 
-      block
-        .querySelectorAll(".item-row")
-        .forEach(row => row.remove());
+    if (
+      service.ctaType === "phone"
+    ) {
+      return {
+        href: "tel:" + phone,
+        icon: "bi-telephone"
+      };
+    }
 
-      /* ------------------------------------------------------
-         CREATE NEW ITEMS
-         ------------------------------------------------------ */
+    if (
+      service.ctaType === "email"
+    ) {
+      const email =
+        SETTINGS.email || "";
 
-      const ctaRow =
-        block.querySelector(".cat-cta");
+      return {
+        href:
+          "mailto:" +
+          email +
+          "?subject=" +
+          encodeURIComponent(
+            service.name
+          ),
+        icon: "bi-envelope"
+      };
+    }
 
-      category.items.forEach(item => {
+    return {
+      href:
+        "https://wa.me/" +
+        whatsapp +
+        "?text=" +
+        encodeURIComponent(
+          "Hello, I need help with " +
+          service.name
+        ),
+      icon: "bi-whatsapp"
+    };
+  }
 
-        const itemRow =
-          document.createElement("div");
+  /*
+   * ----------------------------------------------------------
+   * Homepage service cards
+   * ----------------------------------------------------------
+   */
 
-        itemRow.className =
-          "item-row";
+  function renderHomepageServices() {
+    const container =
+      document.querySelector(
+        "[data-services-container]"
+      );
 
-        const name =
-          document.createElement("span");
+    if (!container) {
+      return;
+    }
 
-        name.className = "iname";
+    container.innerHTML = "";
 
-        name.textContent =
-          item.name;
+    SERVICES.forEach(service => {
+      const tags = service.tags
+        .map(tag =>
+          `<span class="tag">${escapeHTML(tag)}</span>`
+        )
+        .join("");
 
-        const code =
-          document.createElement("span");
+      const html = `
+        <div class="service-row"
+             data-cat="${escapeHTML(service.slug)}">
 
-        code.className = "icode";
+          <div class="sname">
+            <i class="bi ${escapeHTML(service.icon)}"></i>
+            ${escapeHTML(service.name)}
+          </div>
 
-        code.textContent =
-          item.code || "";
+          <div class="sdesc">
+            ${escapeHTML(service.description)}
 
-        itemRow.appendChild(name);
-        itemRow.appendChild(code);
+            <div class="tags">
+              ${tags}
+            </div>
+          </div>
 
-        /*
-          Insert before CTA.
-        */
-        if (ctaRow) {
-          block.insertBefore(
-            itemRow,
-            ctaRow
-          );
-        } else {
-          block.appendChild(
-            itemRow
-          );
-        }
-      });
+          <div>
+            <div class="stime">
+              ${escapeHTML(service.turnaround)}
+            </div>
 
-      /* ------------------------------------------------------
-         TABLE OF CONTENTS COUNT
-         ------------------------------------------------------ */
+            <a
+              class="slink"
+              href="service.html#${encodeURIComponent(service.slug)}">
+              <span data-key="svc_link_label">
+                ${escapeHTML(
+                  CONTENT.svc_link_label ||
+                  "View details →"
+                )}
+              </span>
+            </a>
+          </div>
 
-      const tocLink =
-        document.querySelector(
-          `.toc a[href="#${CSS.escape(slug)}"]`
-        );
+        </div>
+      `;
 
-      if (tocLink) {
-        const count =
-          tocLink.querySelector(".count");
-
-        if (count) {
-          count.textContent =
-            String(
-              category.items.length
-            ).padStart(2, "0");
-        }
-      }
+      container.insertAdjacentHTML(
+        "beforeend",
+        html
+      );
     });
   }
 
-  /* ==========================================================
-     RENDER HOMEPAGE SERVICE SUMMARY
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Service page TOC
+   * ----------------------------------------------------------
+   */
 
-  function renderSummary(categories) {
-    document
-      .querySelectorAll("[data-cat]")
-      .forEach(row => {
+  function renderServiceNavigation() {
+    const toc =
+      document.querySelector(
+        "[data-service-toc]"
+      );
 
-        const slug =
-          row.getAttribute(
-            "data-cat"
-          );
+    if (!toc) {
+      return;
+    }
 
-        if (!slug) {
-          return;
-        }
+    toc.innerHTML = "";
 
-        const category =
-          categories[slug];
+    SERVICES.forEach(service => {
+      const count =
+        service.items.length
+          .toString()
+          .padStart(2, "0");
 
-        /*
-          Category doesn't exist in Sheet.
-          Leave existing HTML unchanged.
-        */
-        if (!category) {
-          return;
-        }
+      toc.insertAdjacentHTML(
+        "beforeend",
+        `
+        <a href="#${escapeHTML(service.slug)}">
+          <span>
+            ${escapeHTML(service.name)}
+          </span>
 
-        /* ----------------------------------------------------
-           NAME
-           ---------------------------------------------------- */
-
-        const nameElement =
-          row.querySelector(
-            ".sname"
-          );
-
-        if (
-          nameElement &&
-          category.label
-        ) {
-          const icon =
-            nameElement.querySelector("i");
-
-          nameElement.textContent = "";
-
-          if (icon) {
-            nameElement.appendChild(icon);
-
-            nameElement.appendChild(
-              document.createTextNode(" ")
-            );
-          }
-
-          nameElement.appendChild(
-            document.createTextNode(
-              category.label
-            )
-          );
-        }
-
-        /* ----------------------------------------------------
-           DESCRIPTION
-           ---------------------------------------------------- */
-
-        const descriptionElement =
-          row.querySelector(
-            ".sdesc"
-          );
-
-        if (
-          descriptionElement &&
-          category.desc
-        ) {
-          /*
-            Preserve any child elements only if
-            the HTML contains them intentionally.
-          */
-
-          const firstTextNode =
-            Array.from(
-              descriptionElement.childNodes
-            ).find(
-              node =>
-                node.nodeType ===
-                Node.TEXT_NODE
-            );
-
-          if (firstTextNode) {
-            firstTextNode.textContent =
-              category.desc + " ";
-          } else {
-            descriptionElement.textContent =
-              category.desc;
-          }
-        }
-
-        /* ----------------------------------------------------
-           TURNAROUND
-           ---------------------------------------------------- */
-
-        const timeElement =
-          row.querySelector(
-            ".stime"
-          );
-
-        if (
-          timeElement &&
-          category.turnaround
-        ) {
-          timeElement.textContent =
-            category.turnaround;
-        }
-
-        /* ----------------------------------------------------
-           TAGS
-           ---------------------------------------------------- */
-
-        const tagsElement =
-          row.querySelector(
-            ".tags"
-          );
-
-        if (tagsElement) {
-
-          /*
-            Remove old tags
-          */
-          tagsElement.innerHTML = "";
-
-          /*
-            Show first 4 services
-          */
-          category.items
-            .slice(0, 4)
-            .forEach(item => {
-
-              const tag =
-                document.createElement(
-                  "span"
-                );
-
-              tag.className = "tag";
-
-              tag.textContent =
-                item.name;
-
-              tagsElement.appendChild(
-                tag
-              );
-            });
-        }
-      });
+          <span class="count mono">
+            ${count}
+          </span>
+        </a>
+        `
+      );
+    });
   }
 
-  /* ==========================================================
-     CATEGORY LABELS
-     ==========================================================
+  /*
+   * ----------------------------------------------------------
+   * Service page categories
+   * ----------------------------------------------------------
+   */
 
-     Works with:
+  function renderServicePage() {
+    const container =
+      document.querySelector(
+        "[data-service-container]"
+      );
 
-       data-cat-label="income-tax"
+    if (!container) {
+      return;
+    }
 
-     Example:
+    container.innerHTML = "";
 
-       <a data-cat-label="income-tax"></a>
+    SERVICES.forEach(service => {
+      const cta =
+        serviceCTA(service);
 
-     The category name comes automatically
-     from the services Sheet.
-  */
+      const itemsHTML =
+        service.items
+          .map(
+            (item, index) => {
 
-  function renderCategoryLabels(categories) {
+              const number =
+                String(index + 1)
+                  .padStart(2, "0");
+
+              const code =
+                service.codePrefix
+                  ? `${service.codePrefix}-${number}`
+                  : number;
+
+              return `
+                <div class="item-row">
+                  <span class="iname">
+                    ${escapeHTML(item)}
+                  </span>
+
+                  <span class="icode">
+                    ${escapeHTML(code)}
+                  </span>
+                </div>
+              `;
+            }
+          )
+          .join("");
+
+      const html = `
+        <div
+          class="cat-block"
+          id="${escapeHTML(service.slug)}">
+
+          <div class="cat-head">
+
+            <h2>
+              <i class="bi ${escapeHTML(service.icon)}"></i>
+              ${escapeHTML(service.name)}
+            </h2>
+
+            <span class="turnaround">
+              ${escapeHTML(service.turnaround)}
+            </span>
+
+          </div>
+
+          <p class="cat-desc">
+            ${escapeHTML(service.description)}
+          </p>
+
+          ${itemsHTML}
+
+          <div class="cat-cta">
+
+            <a
+              href="${escapeHTML(cta.href)}"
+              class="btn-primary"
+              target="${service.ctaType === "whatsapp" ? "_blank" : "_self"}">
+
+              <i class="bi ${escapeHTML(cta.icon)}"></i>
+
+              ${escapeHTML(service.ctaText)}
+
+            </a>
+
+          </div>
+
+        </div>
+      `;
+
+      container.insertAdjacentHTML(
+        "beforeend",
+        html
+      );
+    });
+
+    setupServiceScroll();
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Service select in contact form
+   * ----------------------------------------------------------
+   */
+
+  function renderServiceSelect() {
+    const select =
+      document.querySelector(
+        'select[name="entry.394071758"]'
+      );
+
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = "";
+
+    const placeholder =
+      CONTENT.field_service_placeholder ||
+      "Select a service";
+
+    select.insertAdjacentHTML(
+      "beforeend",
+      `
+      <option value="" disabled selected>
+        ${escapeHTML(placeholder)}
+      </option>
+      `
+    );
+
+    SERVICES.forEach(service => {
+      select.insertAdjacentHTML(
+        "beforeend",
+        `
+        <option
+          value="${escapeHTML(service.name)}"
+          data-cat-label="${escapeHTML(service.slug)}">
+
+          ${escapeHTML(service.name)}
+
+        </option>
+        `
+      );
+    });
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Category labels
+   * ----------------------------------------------------------
+   */
+
+  function applyCategoryLabels() {
     document
       .querySelectorAll(
         "[data-cat-label]"
@@ -820,102 +810,500 @@
       .forEach(element => {
 
         const slug =
-          element.getAttribute(
-            "data-cat-label"
+          element.dataset.catLabel;
+
+        const service =
+          SERVICES.find(
+            item => item.slug === slug
           );
 
-        if (!slug) {
-          return;
-        }
-
-        const category =
-          categories[slug];
-
-        if (
-          category &&
-          category.label
-        ) {
+        if (service) {
           element.textContent =
-            category.label;
+            service.name;
         }
       });
   }
 
-  /* ==========================================================
-     LOAD EVERYTHING
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Deadlines
+   * ----------------------------------------------------------
+   */
 
-  async function loadAllContent() {
-
-    /*
-      Load both sheets independently.
-
-      If one fails, the other can still load.
-    */
-    await Promise.allSettled([
-      loadContent(),
-      loadServices()
-    ]);
-
-    /*
-      Custom event.
-
-      Other JS files can listen for:
-
-      document.addEventListener(
-        "taxcodeContentLoaded",
-        function () {
-          // your code
-        }
+  async function loadDeadlines() {
+    const container =
+      document.querySelector(
+        "[data-deadlines-container]"
       );
-    */
-    document.dispatchEvent(
-      new CustomEvent(
-        "taxcodeContentLoaded"
-      )
+
+    if (!container) {
+      return;
+    }
+
+    const csv =
+      await fetchSheet(
+        SHEETS.deadlines
+      );
+
+    DEADLINES =
+      toObjects(csv)
+        .filter(row =>
+          isVisible(row.visible)
+        );
+
+    container.innerHTML = "";
+
+    DEADLINES.forEach((deadline, index) => {
+
+      const statusClass =
+        String(deadline.status || "")
+          .toLowerCase()
+          .includes("filed")
+          ? "filed"
+          : String(deadline.status || "")
+              .toLowerCase()
+              .includes("due")
+          ? "due"
+          : "upcoming";
+
+      container.insertAdjacentHTML(
+        "beforeend",
+        `
+        <div class="dc-row">
+
+          <div class="dc-left">
+
+            <span class="dc-date mono">
+              ${escapeHTML(deadline.date)}
+            </span>
+
+            <span class="dc-name">
+
+              <span>
+                ${escapeHTML(deadline.name)}
+              </span>
+
+              <small>
+                ${escapeHTML(deadline.sub)}
+              </small>
+
+            </span>
+
+          </div>
+
+          <span class="status ${statusClass}">
+            ${escapeHTML(deadline.status)}
+          </span>
+
+        </div>
+        `
+      );
+    });
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Process
+   * ----------------------------------------------------------
+   */
+
+  async function loadProcess() {
+    const container =
+      document.querySelector(
+        "[data-process-container]"
+      );
+
+    if (!container) {
+      return;
+    }
+
+    const csv =
+      await fetchSheet(
+        SHEETS.process
+      );
+
+    PROCESS =
+      toObjects(csv)
+        .filter(row =>
+          isVisible(row.visible)
+        );
+
+    container.innerHTML = "";
+
+    PROCESS.forEach((step, index) => {
+
+      const number =
+        step.number ||
+        String(index + 1)
+          .padStart(2, "0");
+
+      container.insertAdjacentHTML(
+        "beforeend",
+        `
+        <div class="process-step">
+
+          <div class="pnum">
+            ${escapeHTML(number)}
+          </div>
+
+          <h5>
+            ${escapeHTML(step.title)}
+          </h5>
+
+          <p>
+            ${escapeHTML(step.description)}
+          </p>
+
+        </div>
+        `
+      );
+    });
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Service page scroll navigation
+   * ----------------------------------------------------------
+   */
+
+  function setupServiceScroll() {
+    const links =
+      document.querySelectorAll(
+        ".toc a"
+      );
+
+    const sections =
+      document.querySelectorAll(
+        ".cat-block"
+      );
+
+    if (!links.length || !sections.length) {
+      return;
+    }
+
+    const setActive = () => {
+
+      let current =
+        sections[0].id;
+
+      sections.forEach(section => {
+
+        if (
+          window.scrollY >=
+          section.offsetTop - 140
+        ) {
+          current =
+            section.id;
+        }
+
+      });
+
+      links.forEach(link => {
+
+        link.classList.toggle(
+          "active",
+          link.getAttribute("href") ===
+          "#" + current
+        );
+
+      });
+    };
+
+    window.addEventListener(
+      "scroll",
+      setActive,
+      { passive: true }
     );
 
-    console.log(
-      "TaxCode: Google Sheets content loading finished."
+    setActive();
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * Contact form
+   * ----------------------------------------------------------
+   */
+
+  function setupContactForm() {
+    const form =
+      document.getElementById(
+        "contactForm"
+      );
+
+    const iframe =
+      document.querySelector(
+        'iframe[name="hidden_iframe"]'
+      );
+
+    if (!form || !iframe) {
+      return;
+    }
+
+    let submitted = false;
+
+    form.addEventListener(
+      "submit",
+      function () {
+        submitted = true;
+      }
+    );
+
+    iframe.addEventListener(
+      "load",
+      function () {
+
+        if (!submitted) {
+          return;
+        }
+
+        const toast =
+          document.getElementById(
+            "toast"
+          );
+
+        if (toast) {
+          toast.classList.add("show");
+        }
+
+        form.reset();
+
+        submitted = false;
+
+        setTimeout(() => {
+
+          if (toast) {
+            toast.classList.remove(
+              "show"
+            );
+          }
+
+        }, 5000);
+      }
     );
   }
 
-  /* ==========================================================
-     INITIAL LOAD
-     ========================================================== */
+  /*
+   * ----------------------------------------------------------
+   * Mobile drawer
+   * ----------------------------------------------------------
+   */
+
+  function setupMobileMenu() {
+    const drawer =
+      document.getElementById(
+        "drawer"
+      );
+
+    if (!drawer) {
+      return;
+    }
+
+    drawer
+      .querySelectorAll("a")
+      .forEach(link => {
+
+        link.addEventListener(
+          "click",
+          () => {
+            drawer.classList.remove(
+              "open"
+            );
+          }
+        );
+
+      });
+  }
 
   /*
-    Wait until DOM is ready.
-  */
+   * ----------------------------------------------------------
+   * Update dynamic brand
+   * ----------------------------------------------------------
+   */
+
+  function applyBrand() {
+
+    const brand =
+      SETTINGS.brand ||
+      "TaxCode";
+
+    const logo1 =
+      SETTINGS.logo_text_1 ||
+      "Tax";
+
+    const logo2 =
+      SETTINGS.logo_text_2 ||
+      "Code";
+
+    document
+      .querySelectorAll(
+        "[data-brand]"
+      )
+      .forEach(el => {
+
+        el.innerHTML =
+          `${escapeHTML(logo1)}
+           <span class="dot">
+             ${escapeHTML(logo2)}
+           </span>`;
+
+        el.setAttribute(
+          "aria-label",
+          brand
+        );
+      });
+  }
+
+  /*
+   * ----------------------------------------------------------
+   * MAIN
+   * ----------------------------------------------------------
+   */
+
+  function renderNavigationServices() {
+
+  const nav =
+    document.querySelector(
+      "[data-nav-services]"
+    );
+
+  const mobile =
+    document.querySelector(
+      "[data-mobile-services]"
+    );
+
+  const footer =
+    document.querySelector(
+      "[data-footer-services]"
+    );
+
+  const links = SERVICES
+    .map(service => `
+      <a
+        href="service.html#${escapeHTML(service.slug)}"
+        data-cat-label="${escapeHTML(service.slug)}">
+
+        ${escapeHTML(service.name)}
+
+      </a>
+    `)
+    .join("");
+
+  if (nav) {
+    nav.innerHTML = links;
+  }
+
+  if (mobile) {
+    mobile.innerHTML = SERVICES
+      .map(service => `
+        <a
+          class="dlink"
+          href="service.html#${escapeHTML(service.slug)}">
+
+          ${escapeHTML(service.name)}
+
+        </a>
+      `)
+      .join("");
+  }
+
+  if (footer) {
+    footer.innerHTML = SERVICES
+      .slice(0, 6)
+      .map(service => `
+        <a
+          href="service.html#${escapeHTML(service.slug)}">
+
+          ${escapeHTML(service.name)}
+
+        </a>
+      `)
+      .join("");
+  }
+}
+
+  async function init() {
+
+    try {
+
+      await Promise.all([
+        loadContent(),
+        loadSettings()
+      ]);
+
+      applyBrand();
+
+      await Promise.all([
+        loadServices(),
+        loadDeadlines(),
+        loadProcess()
+      ]);
+
+      applyCategoryLabels();
+
+      setupContactForm();
+      setupMobileMenu();
+
+      /*
+       * Reapply content because some HTML is generated
+       * after the first content load.
+       */
+
+      applyContent();
+      applyCategoryLabels();
+      applySettings();
+
+      console.log(
+        "TaxCode: dynamic website loaded successfully."
+      );
+
+      document.dispatchEvent(
+        new CustomEvent(
+          "taxcodeContentLoaded",
+          {
+            detail: {
+              content: CONTENT,
+              settings: SETTINGS,
+              services: SERVICES,
+              deadlines: DEADLINES,
+              process: PROCESS
+            }
+          }
+        )
+      );
+
+    } catch (error) {
+
+      console.error(
+        "TaxCode content loading failed:",
+        error
+      );
+
+      /*
+       * Website still remains usable if Google Sheets
+       * cannot be reached.
+       */
+
+    }
+  }
+
+  /*
+   * Start after DOM is ready
+   */
+
   if (
     document.readyState ===
     "loading"
   ) {
+
     document.addEventListener(
       "DOMContentLoaded",
-      loadAllContent
+      init
     );
+
   } else {
-    loadAllContent();
-  }
 
-  /* ==========================================================
-     OPTIONAL AUTO REFRESH
-     ========================================================== */
+    init();
 
-  if (
-    AUTO_REFRESH_INTERVAL > 0
-  ) {
-    setInterval(
-      loadAllContent,
-      AUTO_REFRESH_INTERVAL
-    );
-
-    console.log(
-      `TaxCode: Automatic Google Sheet refresh enabled every ${
-        AUTO_REFRESH_INTERVAL / 1000
-      } seconds.`
-    );
   }
 
 })();

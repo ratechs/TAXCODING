@@ -84,7 +84,7 @@
 
   // ---------- content tab: key -> value for every text field + SEO ----------
   fetch(csvUrl('content'))
-    .then(r => { if (!r.ok) throw new Error('content tab not reachable'); return r.text(); })
+    .then(r => { if (!r.ok) throw new Error('content tab not reachable'); console.log('Content tab loaded.', r.text()); return r.text(); })
     .then(text => {
       const map = {};
       toObjects(parseCSV(text)).forEach(r => { if (r.key) map[r.key] = r.value; });

@@ -563,23 +563,36 @@
         .join("");
 
       const html = `
-        <div class="service-row"
-             data-cat="${escapeHTML(service.slug)}">
+        <div
+          class="service-row reveal"
+          data-cat="${escapeHTML(service.slug)}">
 
           <div class="sname">
-            <i class="bi ${escapeHTML(service.icon)}"></i>
-            ${escapeHTML(service.name)}
+
+            <span class="service-icon">
+
+              <i class="bi ${escapeHTML(service.icon)}"></i>
+
+            </span>
+
+            <span>
+              ${escapeHTML(service.name)}
+            </span>
+
           </div>
 
           <div class="sdesc">
+
             ${escapeHTML(service.description)}
 
             <div class="tags">
               ${tags}
             </div>
+
           </div>
 
           <div>
+
             <div class="stime">
               ${escapeHTML(service.turnaround)}
             </div>
@@ -587,13 +600,14 @@
             <a
               class="slink"
               href="service.html#${encodeURIComponent(service.slug)}">
-              <span data-key="svc_link_label">
-                ${escapeHTML(
-                  CONTENT.svc_link_label ||
-                  "View details →"
-                )}
-              </span>
+
+              ${escapeHTML(
+                CONTENT.svc_link_label ||
+                "View details →"
+              )}
+
             </a>
+
           </div>
 
         </div>
@@ -736,7 +750,11 @@
             </a>
 
           </div>
-
+          
+          <div class="service-count">
+            ${service.items.length}
+            services
+          </div>
         </div>
       `;
 
@@ -1220,6 +1238,100 @@
       .join("");
   }
 }
+function setupAnimations() {
+
+  const elements = document.querySelectorAll(`
+    section,
+    .service-row,
+    .process-step,
+    .cat-block,
+    .deadline-card,
+    .cta-block,
+    .map-frame,
+    .stat
+  `);
+
+  elements.forEach(element => {
+
+    if (
+      element.classList.contains("hero") ||
+      element.classList.contains("topbar") ||
+      element.classList.contains("nav")
+    ) {
+      return;
+    }
+
+    element.classList.add("reveal");
+
+  });
+
+
+  if (
+    !("IntersectionObserver" in window)
+  ) {
+
+    elements.forEach(
+      element =>
+        element.classList.add("active")
+    );
+
+    return;
+  }
+
+
+  const observer =
+    new IntersectionObserver(
+      entries => {
+
+        entries.forEach(entry => {
+
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          entry.target.classList.add(
+            "active"
+          );
+
+          observer.unobserve(
+            entry.target
+          );
+
+        });
+
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -60px 0px"
+      }
+    );
+
+
+  elements.forEach(element => {
+
+    observer.observe(element);
+
+  });
+
+}
+
+function setupStaggerAnimations() {
+
+  document
+    .querySelectorAll(
+      ".service-row, .process-step, .item-row"
+    )
+    .forEach((element, index) => {
+
+      const delay =
+        Math.min(index * 70, 500);
+
+      element.style.transitionDelay =
+        `${delay}ms`;
+
+    });
+
+}
 
   async function init() {
 
@@ -1242,6 +1354,8 @@
 
       setupContactForm();
       setupMobileMenu();
+      setupAnimations();
+      setupStaggerAnimations();
 
       /*
        * Reapply content because some HTML is generated
@@ -1307,3 +1421,4 @@
   }
 
 })();
+
